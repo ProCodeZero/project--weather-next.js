@@ -1,113 +1,148 @@
-import Image from "next/image";
+'use client';
+
+import Container from '@/components/Container';
+import ForecastWeatherDetail from '@/components/ForecastWeatherDetail';
+import Navbar from '@/components/Navbar';
+import WeatherDetails from '@/components/WeatherDetails';
+import WeatherIcon from '@/components/WeatherIcon';
+import { convertWindSpeed } from '@/utils/convertWindSpeed';
+import { getDayOrNightIcon } from '@/utils/getDayOrNightIcon';
+import { kelvinToCelsius } from '@/utils/kelvinToCelsius';
+import { metersToKilometers } from '@/utils/metersToKilometers';
+import axios from 'axios';
+import { format, fromUnixTime, parseISO } from 'date-fns';
+import { useQuery } from 'react-query';
+
+// https://api.openweathermap.org/data/2.5/forecast?q=pune&appid=d388494e1a49cef4c99c52e4b57bb8e8&cnt=56
 
 export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+	const { isLoading, error, data } = useQuery<WeatherData>({
+		queryKey: ['repoData'],
+		queryFn: async () => {
+			const { data } = await axios.get(
+				`https://api.openweathermap.org/data/2.5/forecast?q=pune&appid=${process.env.NEXT_PUBLIC_WEATHER_KEY}&cnt=56`
+			);
+			return data;
+		},
+	});
+	console.log(data);
 
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+	const firstData = data?.list[0];
 
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+	const uniqueDates = [
+		...new Set(data?.list.map((entry) => new Date(entry.dt * 1000).toISOString().split('T')[0])),
+	];
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+	// Filtering data to get the first entry after 6 AM for each unique date
+	const firstDataForEachDate = uniqueDates.map((date) => {
+		return data?.list.find((entry) => {
+			const entryDate = new Date(entry.dt * 1000).toISOString().split('T')[0];
+			const entryTime = new Date(entry.dt * 1000).getHours();
+			return entryDate === date && entryTime >= 6;
+		});
+	});
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
+	if (isLoading) {
+		return (
+			<div className="flex items-center min-h-screen justify-center">
+				<p className="animate-bounce">Loading...</p>
+			</div>
+		);
+	}
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  );
+	return (
+		<>
+			<div className="flex flex-col gap-4 bg-gray-100 min-h-screen">
+				<Navbar />
+				<main className="px-3 max-w-7xl mx-auto flex flex-col gap-9 w-full pb-10 pt-4">
+					{/* today data */}
+					<section className="space-y-4">
+						{/* first block */}
+						<div className="space-y-2">
+							<h2 className="flex gap-1 text-2xl items-end">
+								<p>{format(parseISO(firstData?.dt_txt ?? ''), 'EEEE')}</p>
+								<p className="text-lg">{format(parseISO(firstData?.dt_txt ?? ''), 'dd.MM.yyyy')}</p>
+							</h2>
+							<Container className="gap-10 px-6 items-center">
+								{/* general temperature statistic */}
+								<div className="flex flex-col px-4">
+									<span className="text-5xl">{kelvinToCelsius(firstData?.main.temp ?? 0)}°</span>
+									<p className="text-xs space-x-1 whitespace-nowrap">
+										<span>Feels like {kelvinToCelsius(firstData?.main.feels_like ?? 0)}° </span>
+									</p>
+									<p className="text-xs space-x-2">
+										<span>{kelvinToCelsius(firstData?.main.temp_min ?? 0)}°↓</span>
+										<span>{kelvinToCelsius(firstData?.main.temp_max ?? 0)}°↑</span>
+									</p>
+								</div>
+								{/* time and weather icon */}
+								<div className="flex gap-10 sm:gap-16 overflow-x-auto w-full justify-between pr-3">
+									{data?.list.map((item, index) => (
+										<div
+											key={index}
+											className="flex flex-col items-center justify-between gap-2 text-xs font-semibold"
+										>
+											<p className="text-xs">{format(parseISO(item.dt_txt), 'HH:mm')}</p>
+											<WeatherIcon
+												icon_name={getDayOrNightIcon(item.weather[0].icon, item.dt_txt)}
+											/>
+											<p>{kelvinToCelsius(item.main.temp ?? 0)}°</p>
+										</div>
+									))}
+								</div>
+							</Container>
+						</div>
+						{/* second block */}
+						<div className="flex gap-4">
+							{/* left */}
+							<Container className="w-fit justify-center flex-col px-4 items-center">
+								<p className="capitalize text-center">{firstData?.weather[0].description}</p>
+								<WeatherIcon
+									icon_name={getDayOrNightIcon(
+										firstData?.weather[0].icon ?? '',
+										firstData?.dt_txt ?? ''
+									)}
+								/>
+							</Container>
+							{/* right */}
+							<Container className="bg-yellow-300/80 px6 gap-4 justify-around">
+								<WeatherDetails
+									visibility={metersToKilometers(firstData?.visibility ?? 10000)}
+									airPressure={`${firstData?.main.pressure}hPa`}
+									humidity={`${firstData?.main.humidity}%`}
+									windSpeed={convertWindSpeed(firstData?.wind.speed ?? 0)}
+									sunrise={format(fromUnixTime(data?.city.sunrise ?? 0), 'H:mm')}
+									sunset={format(fromUnixTime(data?.city.sunset ?? 0), 'H:mm')}
+								/>
+							</Container>
+						</div>
+					</section>
+
+					{/* 7 day forecast data */}
+					<section className="flex w-full flex-col gap-4">
+						<p className="text-2xl">Forecast (7 days)</p>
+						{firstDataForEachDate.map((d, i) => (
+							<ForecastWeatherDetail
+								key={i}
+								description={d?.weather[0].description ?? ''}
+								weatherIcon={d?.weather[0].icon ?? '01d'}
+								date={format(parseISO(d?.dt_txt ?? '2024-01-01'), 'dd.MM')}
+								day={format(parseISO(d?.dt_txt ?? '2024-01-01'), 'EEEE')}
+								feels_like={d?.main.feels_like ?? 0}
+								temp={d?.main.temp ?? 0}
+								temp_max={d?.main.temp_max ?? 0}
+								temp_min={d?.main.temp_min ?? 0}
+								airPressure={`${d?.main.pressure}hPa`}
+								humidity={`${d?.main.humidity}$`}
+								sunrise={format(fromUnixTime(data?.city.sunrise ?? 1702517657), 'H:mm')}
+								sunset={format(fromUnixTime(data?.city.sunset ?? 1702517657), 'H:mm')}
+								visibility={`${metersToKilometers(d?.visibility ?? 10000)}`}
+								windSpeed={`${convertWindSpeed(d?.wind.speed ?? 0)}`}
+							/>
+						))}
+					</section>
+				</main>
+			</div>
+		</>
+	);
 }
