@@ -25,7 +25,6 @@ export default function Home() {
 			return data;
 		},
 	});
-	console.log(data);
 
 	const firstData = data?.list[0];
 
@@ -121,25 +120,28 @@ export default function Home() {
 					{/* 7 day forecast data */}
 					<section className="flex w-full flex-col gap-4">
 						<p className="text-2xl">Forecast (7 days)</p>
-						{firstDataForEachDate.map((d, i) => (
-							<ForecastWeatherDetail
-								key={i}
-								description={d?.weather[0].description ?? ''}
-								weatherIcon={d?.weather[0].icon ?? '01d'}
-								date={format(parseISO(d?.dt_txt ?? '2024-01-01'), 'dd.MM')}
-								day={format(parseISO(d?.dt_txt ?? '2024-01-01'), 'EEEE')}
-								feels_like={d?.main.feels_like ?? 0}
-								temp={d?.main.temp ?? 0}
-								temp_max={d?.main.temp_max ?? 0}
-								temp_min={d?.main.temp_min ?? 0}
-								airPressure={`${d?.main.pressure}hPa`}
-								humidity={`${d?.main.humidity}$`}
-								sunrise={format(fromUnixTime(data?.city.sunrise ?? 1702517657), 'H:mm')}
-								sunset={format(fromUnixTime(data?.city.sunset ?? 1702517657), 'H:mm')}
-								visibility={`${metersToKilometers(d?.visibility ?? 10000)}`}
-								windSpeed={`${convertWindSpeed(d?.wind.speed ?? 0)}`}
-							/>
-						))}
+						{firstDataForEachDate.map((d, i) => {
+							console.log(d);
+							return (
+								<ForecastWeatherDetail
+									key={i}
+									description={d?.weather[0].description ?? ''}
+									weatherIcon={d?.weather[0].icon ?? '01d'}
+									date={format(parseISO(d?.dt_txt ?? '2024-01-01'), 'dd.MM')}
+									day={format(parseISO(d?.dt_txt ?? '2024-01-01'), 'EEEE')}
+									feels_like={d?.main.feels_like ?? 0}
+									temp={d?.main.temp ?? 0}
+									temp_max={d?.main.temp_max ?? 0}
+									temp_min={d?.main.temp_min ?? 0}
+									airPressure={`${d?.main.pressure}hPa`}
+									humidity={`${d?.main.humidity}$`}
+									sunrise={format(fromUnixTime(data?.city.sunrise ?? 1702517657), 'H:mm')}
+									sunset={format(fromUnixTime(data?.city.sunset ?? 1702517657), 'H:mm')}
+									visibility={`${metersToKilometers(d?.visibility ?? 10000)}`}
+									windSpeed={`${convertWindSpeed(d?.wind.speed ?? 0)}`}
+								/>
+							);
+						})}
 					</section>
 				</main>
 			</div>
