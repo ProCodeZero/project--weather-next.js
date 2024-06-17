@@ -1,10 +1,10 @@
 'use client';
 
-import Container from '@/components/Container';
-import ForecastWeatherDetail from '@/components/ForecastWeatherDetail';
-import Navbar from '@/components/Navbar';
-import WeatherDetails from '@/components/WeatherDetails';
-import WeatherIcon from '@/components/WeatherIcon';
+import Container from '@/app/components/Container';
+import ForecastWeatherDetail from '@/app/components/ForecastWeatherDetail';
+import Navbar from '@/app/components/Navbar';
+import WeatherDetails from '@/app/components/WeatherDetails';
+import WeatherIcon from '@/app/components/WeatherIcon';
 import { convertWindSpeed } from '@/utils/convertWindSpeed';
 import { getDayOrNightIcon } from '@/utils/getDayOrNightIcon';
 import { kelvinToCelsius } from '@/utils/kelvinToCelsius';
