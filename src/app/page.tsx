@@ -134,7 +134,7 @@ export default function Home() {
 									temp_max={d?.main.temp_max ?? 0}
 									temp_min={d?.main.temp_min ?? 0}
 									airPressure={`${d?.main.pressure}hPa`}
-									humidity={`${d?.main.humidity}$`}
+									humidity={`${d?.main.humidity}%`}
 									sunrise={format(fromUnixTime(data?.city.sunrise ?? 1702517657), 'H:mm')}
 									sunset={format(fromUnixTime(data?.city.sunset ?? 1702517657), 'H:mm')}
 									visibility={`${metersToKilometers(d?.visibility ?? 10000)}`}
