@@ -1,17 +1,22 @@
+import { loadingCityAtom, placeAtom } from '@/app/atom';
 import axios from 'axios';
+import { useAtom } from 'jotai';
 import { FormEvent, useState } from 'react';
 import { MdMyLocation, MdOutlineLocationOn, MdWbSunny } from 'react-icons/md';
 import SearchBox from './SearchBox';
-type Props = {};
+type Props = { location: string };
 
 const API_KEY = process.env.NEXT_PUBLIC_WEATHER_KEY;
 
-export default function Navbar({}: Props) {
+export default function Navbar({ location }: Props) {
 	const [city, setCity] = useState('');
 	const [error, setError] = useState('');
 	//
 	const [suggestions, setSuggestions] = useState<string[]>([]);
 	const [showSuggestions, setShowSuggestions] = useState(false);
+
+	const [place, setPlace] = useAtom(placeAtom);
+	const [_, setLoadingCity] = useAtom(loadingCityAtom);
 
 	async function handleInputChange(value: string) {
 		setCity(value);
@@ -40,12 +45,40 @@ export default function Navbar({}: Props) {
 	}
 
 	function handleSubmitSearch(e: FormEvent<HTMLFormElement>) {
+		setLoadingCity(true);
 		e.preventDefault();
 		if (suggestions.length === 0) {
 			setError('Location not found');
+			setLoadingCity(false);
 		} else {
-			setError('');
-			setShowSuggestions(false);
+			setTimeout(() => {
+				setError('');
+				setPlace(city);
+				setLoadingCity(false);
+				setShowSuggestions(false);
+			}, 500);
+		}
+	}
+
+	function handleCurrentLocation() {
+		if (navigator.geolocation) {
+			navigator.geolocation.getCurrentPosition(async (position) => {
+				const { latitude, longitude } = position.coords;
+				try {
+					setLoadingCity(true);
+
+					const response = await axios.get(
+						`https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}`
+					);
+
+					setTimeout(() => {
+						setLoadingCity(false);
+						setPlace(response.data.name);
+					}, 500);
+				} catch (error) {
+					setLoadingCity(false);
+				}
+			});
 		}
 	}
 
@@ -57,9 +90,13 @@ export default function Navbar({}: Props) {
 					<MdWbSunny className="text-3xl mt-1 text-yellow-300" />
 				</div>
 				<section className="flex gap-2  items-center">
-					<MdMyLocation className="text-2xl text-gray-400 hover:opacity-80 cursor-pointer" />
+					<MdMyLocation
+						title="Your current location"
+						className="text-2xl text-gray-400 hover:opacity-80 cursor-pointer"
+						onClick={handleCurrentLocation}
+					/>
 					<MdOutlineLocationOn className="text-3xl text-gray-700" />
-					<p className="text-slate-900/80 text-sm">Russia</p>
+					<p className="text-slate-900/80 text-sm">{location}</p>
 					<div className="relative">
 						<SearchBox
 							value={city}
